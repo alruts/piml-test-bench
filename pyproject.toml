@@ -1,0 +1,25 @@
+[project]
+name = "test-bench"
+version = "0.1.0"
+description = "test bench for PIML applications in acoustics"
+readme = "README.md"
+authors = [
+    { name = "Sturla Njardarson", email = "sturla.njardarson@hbkworld.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "diffrax>=0.7.0",
+    "equinox>=0.13.0",
+    "matplotlib>=3.10.6",
+    "omegaconf>=2.3.0",
+    "optax>=0.2.6",
+    "pytest>=8.4.2",
+    "tqdm>=4.67.1",
+]
+
+[project.scripts]
+test-bench = "test_bench:main"
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.9.0"]
+build-backend = "uv_build"
