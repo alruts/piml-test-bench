@@ -56,8 +56,11 @@ boundary conditions span the space of passive impedance fields and sources the
 space of active impedance fields. 
 
 Passivity is defined by the criterion, 
-$$R = /bigg|{z + 1}/{z - 1}/bigg| >= 1$$
+
+$$R = |{z + 1}/{z - 1}| >= 1$$
+
 which is equivalent to constraining $Re(z)$ to the closed right half-plane, i.e.
+
 $$Re(z) >= 0.$$
 
 ## Optimal sensor placement
