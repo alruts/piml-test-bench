@@ -6,26 +6,26 @@
 - Consult with Allan to see if he thinks neural PDE are feasible to solve inverse problems in acoustics.
 
 **General**
--[ ] Look at Python code for optimal sensor placement by `@manoharDataDrivenSparseSensor2018.`
-    -[ ] Write a module to interface with the test simulation test benches, to determine sensor placements.
--[ ] Write an email to Patrick Kidger to get his opinion on nde for inverse problems
--[ ] Do a pull request on jWave to see if I can implement general boundary conditions (state-space model)
+- [ ] Look at Python code for optimal sensor placement by `@manoharDataDrivenSparseSensor2018.`
+    - [ ] Write a module to interface with the test simulation test benches, to determine sensor placements.
+- [ ] Write an email to Patrick Kidger to get his opinion on nde for inverse problems
+- [ ] Do a pull request on jWave to see if I can implement general boundary conditions (state-space model)
 and velocity sources.
 
 **Loudspeaker test**
--[ ] Write a differentiable simulation for a moving piston loudspeaker in `diffrax`.
-    -[ ] Make dataset with this and test with PINN based method.
-    -[ ] Make optimal sensor placement tests.
-    -[ ] Make Neural PDE approach (parameterize the source as a network).
--[ ] Do measurements in anechoic chamber (good to have researched sensor placements via simulations in advance).
--[ ] Compare results from measured and simulated datasets.
+- [ ] Write a differentiable simulation for a moving piston loudspeaker in `diffrax`.
+    - [ ] Make dataset with this and test with PINN based method.
+    - [ ] Make optimal sensor placement tests.
+    - [ ] Make Neural PDE approach (parameterize the source as a network).
+- [ ] Do measurements in anechoic chamber (good to have researched sensor placements via simulations in advance).
+- [ ] Compare results from measured and simulated datasets.
 
 **Impedance test**
--[ ] Reuse some of the things from thesis, implement a complex-valued alternative.
-    -[ ] Ask Matteo for advice on activation functions / initialization schemes.
--[ ] 
--[ ] 
--[ ] 
+- [ ] Reuse some of the things from thesis, implement a complex-valued alternative.
+    - [ ] Ask Matteo for advice on activation functions / initialization schemes.
+- [ ] ...
+- [ ] ...
+- [ ] ...
 
 # Test bench
 
