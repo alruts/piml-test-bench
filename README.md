@@ -1,23 +1,28 @@
 *To-do list*
 
 **Open questions**
-- Is there *any* way to do differentiable single frequency acoustic FEM/BEM or do I have to implement this? Extend jWave?
-- Are neural pdes actually viable ways of solving inverse problems (from kidger: PINNs are a terrible idea, 
-- Consult with Allan to see if he thinks neural PDE are feasible to solve inverse problems in acoustics.
+- Is there *any* way to do differentiable single frequency acoustic FEM/BEM or
+do I have to implement this? Extend jWave?
+- Are neural pdes actually viable ways of solving inverse problems (from
+kidger: PINNs are a terrible idea, 
+- Consult with Allan to see if he thinks neural PDE are feasible to solve
+inverse problems in acoustics.
 
 **General**
 - [ ] Look at Python code for optimal sensor placement by `@manoharDataDrivenSparseSensor2018.`
     - [ ] Write a module to interface with the test simulation test benches, to determine sensor placements.
-- [ ] Write an email to Patrick Kidger to get his opinion on nde for inverse problems
-- [ ] Do a pull request on jWave to see if I can implement general boundary conditions (state-space model)
-and velocity sources.
+- [ ] Write an email to Patrick Kidger to get his opinion on nde for inverse
+problems
+- [ ] Do a pull request on jWave to see if I can implement general boundary
+conditions (state-space model) and velocity sources.
 
 **Loudspeaker test**
 - [ ] Write a differentiable simulation for a moving piston loudspeaker in `diffrax`.
     - [ ] Make dataset with this and test with PINN based method.
     - [ ] Make optimal sensor placement tests.
     - [ ] Make Neural PDE approach (parameterize the source as a network).
-- [ ] Do measurements in anechoic chamber (good to have researched sensor placements via simulations in advance).
+- [ ] Do measurements in anechoic chamber (good to have researched sensor
+placements via simulations in advance).
 - [ ] Compare results from measured and simulated datasets.
 
 **Impedance test**
@@ -44,33 +49,43 @@ To characterize a surface acoustically, we generally need two state variables:
 
 Which together form the impedance field
 
-$$\boldsymbol{Z} = p / \boldsymbol{v}$$
+$$Z = p / v$$
 
 Generally, can view problems 1 and 2 as impedance estimation tasks where
 boundary conditions span the space of passive impedance fields and sources the
 space of active impedance fields. 
 
-<!-- passive/active classification --> 
-The criterion ...
-
-$$|\frac{\zeta + 1}{\zeta - 1}| >= 1$$
-
-where ... are considered active and ... are considered passive.
+Passivity is defined by the criterion, 
+$$R = /bigg|{z + 1}/{z - 1}/bigg| >= 1$$
+which is equivalent to constraining $Re(z)$ to the closed right half-plane, i.e.
+$$Re(z) >= 0.$$
 
 ## Optimal sensor placement
 
 The test bench is also meant to be used to research optimal sensor placements
-for such problems,
+for such problems, especially in the case of using PINN as the end architecture.
 
 ## Test Cases
 
 Each case has a physical test bench set up at DTU, with a corresponding
-simulation setup implemented in ...
+simulation setup implemented in <<Insert Tool>>.
 
 ### Active case: A loudspeaker in free-field
-
+A loudspeaker with dimensions based on a physical loudspeaker available at dtu of
+- width: <**> mm
+- height: <**> mm
+- depth: <**> mm
+- membrane diameter: <**> mm
+- membrane center height (w.t.t base): <**> mm
 
 ### Passive case: A squared absorber in free-field
+A squared test specimen of size
+- width: <**> mm
+- height: <**> mm
+- depth: <**> mm
+
+The simulations could easily span a bunch of impedances, measurements will have
+to be decided later.
 
 
 ## Solution architectures
