@@ -19,7 +19,7 @@ class SpatialDiscretisation(eqx.Module):
         return cls(x0, x_final, vals)
 
     @property
-    def δx(self):
+    def dx(self):
         return (self.x_final - self.x0) / (len(self.vals) - 1)
 
     def binop(self, other, fn):
