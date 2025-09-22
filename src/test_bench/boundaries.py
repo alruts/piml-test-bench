@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Union
 
 import equinox as eqx
 import jax.numpy as jnp
@@ -38,25 +38,4 @@ class PeriodicBC(eqx.Module):
         return SpatialDiscretisation(y.x0, y.x_final, y_val)
 
 
-class ImpedanceBC(eqx.Module):
-    b: Float[Array, "n_coeffs"]  # numerator
-    a: Float[Array, "n_coeffs"]  # denominator
-    v_history: Float[Array, "n_coeffs"]
-    p_history: Float[Array, "n_coeffs"]
-
-    def apply(self, y: SpatialDiscretisation, v: SpatialDiscretisation, left=True):
-        idx = 0 if left else -1
-        v_boundary = v.vals[idx]
-
-        v_hist = jnp.roll(self.v_history, shift=1)
-        v_hist = v_hist.at[0].set(v_boundary)
-
-        p_hist = jnp.roll(self.p_history, shift=1)
-        p_new = jnp.dot(self.b, v_hist) - jnp.dot(self.a[1:], p_hist[1:])
-
-        # Update histories
-        new_bc = ImpedanceBC(self.b, self.a, v_hist, p_hist.at[0].set(p_new))
-
-        # Update boundary value
-        y_val = y.vals.at[idx].set(p_new)
-        return SpatialDiscretisation(y.x0, y.x_final, y_val), new_bc
+BoundaryCondition = DirichletBC | NeumannBC | PeriodicBC | ImpedanceBC

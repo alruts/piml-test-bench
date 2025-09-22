@@ -8,6 +8,7 @@ from test_bench.boundaries import DirichletBC, ImpedanceBC, NeumannBC
 from test_bench.discretize import SpatialDiscretisation
 from test_bench.vector_fields import wave_vector_field
 
+
 jax.config.update("jax_enable_x64", True)
 
 
@@ -21,10 +22,10 @@ wave_speed = 343.0  # wave speed
 density = 1.2  # density
 x0 = 0.0
 x_final = 1.0
-n_points = 2001
+n_points = 1001
 
 L = x_final - x0
-δx = L / n_points
+dx = L / n_points
 
 # Initial conditions
 p0_fn = lambda x: jnp.exp(-1000 * (x - x_final / 2) ** 2)  # Gaussian pulse
@@ -32,13 +33,16 @@ v0_fn = lambda _: 0.0  # Initially at rest
 
 p0 = SpatialDiscretisation.discretise_fn(x0, x_final, n_points, p0_fn)
 v0 = SpatialDiscretisation.discretise_fn(x0, x_final, n_points, v0_fn)
-
-y0 = (p0, v0), DirichletBC(), DirichletBC()
+y0 = (
+    (p0, v0),
+    NeumannBC(),
+    ImpedanceBC(jnp.array([1.0, 0.0]), jnp.array([0.5]), jnp.array0, 0),
+)
 
 # Time settings
 t0 = 0.0
-t_final = 0.1
-δt = 1e-12
+t_final = 100e-3
+dt = 1e-12
 ts = jnp.linspace(t0, t_final, 200)
 saveat = diffrax.SaveAt(
     ts=jnp.linspace(
@@ -48,12 +52,6 @@ saveat = diffrax.SaveAt(
     )
 )
 
-
-# boundary conditions
-left_bc = NeumannBC()
-right_bc = DirichletBC()
-v = None
-
 # Solver config
 term = diffrax.ODETerm(wave_vector_field)
 solver = diffrax.Dopri5()
@@ -62,8 +60,8 @@ atol = 1e-12
 stepsize_controller = diffrax.PIDController(rtol=rtol, atol=atol)
 
 # check CFL condition
-assert wave_speed * (δt / δx) <= 1, (
-    f"CFL condition is broken got {wave_speed * (δt / δx)}"
+assert wave_speed * (dt / dx) <= 1, (
+    f"CFL condition is broken got {wave_speed * (dt / dx)}"
 )
 
 # Solve
@@ -72,9 +70,9 @@ sol = diffrax.diffeqsolve(
     solver,
     t0,
     t_final,
-    δt,
+    dt,
     y0,
-    args=(wave_speed, density, v),
+    args=(wave_speed, density, 0),
     saveat=saveat,
     stepsize_controller=stepsize_controller,
     progress_meter=diffrax.TqdmProgressMeter(),

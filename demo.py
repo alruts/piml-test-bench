@@ -64,12 +64,13 @@ import jax
 import jax.numpy as jnp
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
-from diffrax import ODETerm, PIDController, SaveAt, diffeqsolve
+from diffrax import diffeqsolve, ODETerm, PIDController, SaveAt
+
 
 jax.config.update("jax_enable_x64", True)
 
 # Parameters
-N = int(250) * 8 + 1
+N = 250 * 8 + 1
 L = 1.0
 c = 343.0
 rho0 = 1.225
