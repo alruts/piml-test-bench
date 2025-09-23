@@ -1,9 +1,46 @@
 from collections.abc import Callable, Sequence
+from typing import NamedTuple
 
 import equinox as eqx
 import jax
 import jax.numpy as jnp
-from jaxtyping import Array, Float
+from jaxtyping import Array, Float, PyTree
+
+
+class Point1d(NamedTuple):
+    x: float
+
+
+class Point2d(NamedTuple):
+    x: float
+    y: float
+
+
+class Point3d(NamedTuple):
+    x: float
+    y: float
+    z: float
+
+
+class Vector1d(NamedTuple):
+    x: float
+
+
+class Vector2d(NamedTuple):
+    x: float
+    y: float
+
+
+class Vector3d(NamedTuple):
+    x: float
+    y: float
+    z: float
+
+
+# Type hint unions
+Point = Point1d | Point2d | Point3d
+Vector = Vector1d | Vector2d | Vector3d
+PointOrVector = Point | Vector
 
 
 class SpatialDiscretisation(eqx.Module):
@@ -54,7 +91,7 @@ class SpatialDiscretisation(eqx.Module):
 
 class SpatialDiscretisationND(eqx.Module):
     bounds: Sequence[tuple[float, float]] = eqx.field(static=True)
-    vals: Float[Array, "..."]  # Arbitrary N-dimensional array
+    vals: Float[Array, "..."]  # N-dimensional array
 
     @classmethod
     def discretise_fn(
@@ -116,6 +153,38 @@ class SpatialDiscretisationND(eqx.Module):
         ]
         return jnp.meshgrid(*axes, indexing="ij")  # Returns list of N arrays
 
+    def closest_point_index(self, point: Point):
+        """
+        Find the closest grid point index to the given Point or Vector.
+
+        Returns:
+            A tuple of indices (i, j, ..., n) into the grid.
+        """
+        # Convert named tuple to jnp array
+        point_coords = jnp.array(tuple(point))
+
+        # Get meshgrid of coordinates and stack to shape (..., ndim)
+        coord_arrays = (
+            self.coordinate_arrays
+        )  # list of ndim arrays of shape (n1, n2, ..., nN)
+        stacked_coords = jnp.stack(
+            coord_arrays, axis=-1
+        )  # shape: (n1, n2, ..., nN, ndim)
+        flat_coords = stacked_coords.reshape(-1, self.ndim)  # shape: (num_points, ndim)
+
+        # Compute squared Euclidean distances to the input point
+        dists_squared = jnp.sum(
+            (flat_coords - point_coords) ** 2, axis=1
+        )  # shape: (num_points,)
+
+        # Get the index of the closest point
+        flat_idx = jnp.argmin(dists_squared)
+
+        # Convert flat index to multi-dimensional index
+        multi_idx = jnp.unravel_index(flat_idx, self.vals.shape)
+
+        return multi_idx
+
     def binop(self, other, fn):
         if isinstance(other, SpatialDiscretisationND):
             if self.bounds != other.bounds or self.vals.shape != other.vals.shape:
@@ -142,67 +211,67 @@ class SpatialDiscretisationND(eqx.Module):
         return self.__mul__(other)
 
 
-# Use a more interesting function
-import jax.numpy as jnp
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+class Boundary(eqx.Module):
+    """
+    Represents a point on a boundary along with its normal vector.
+
+    Attributes:
+        apply_fn (Callable): A function ...
+        state (PyTree): a PyTree that encodes the current state of the boundary
+        point (Point): The position of the boundary point.
+        normal (Vector): The outward (or specified) unit normal at the point.
+    """
+
+    apply_fn: Callable
+    state: PyTree
+    point: Point
+    normal: Vector
 
 
-# f(x, y, z) = sin(pi*x) * cos(pi*y) * sin(pi*z)
-fn = (
-    lambda coord: jnp.sin(jnp.pi * coord[0])
-    * jnp.cos(jnp.pi * coord[1])
-    * jnp.sin(jnp.pi * coord[2])
-)
+def gradient(y: SpatialDiscretisationND) -> SpatialDiscretisationND:
+    grads = []
 
-bounds = [(0.0, 1.0), (0.0, 1.0), (0.0, 1.0)]
-n_points = [30, 30, 30]  # higher resolution
+    for axis, dx in enumerate(y.dxs):
+        g = jnp.empty_like(y.vals)
 
-grid = SpatialDiscretisationND.discretise_fn(bounds, n_points, fn)
+        # central differences: interior points
+        center = tuple(
+            slice(1, -1) if ax == axis else slice(None) for ax in range(y.ndim)
+        )
+        left = tuple(
+            slice(0, -2) if ax == axis else slice(None) for ax in range(y.ndim)
+        )
+        right = tuple(
+            slice(2, None) if ax == axis else slice(None) for ax in range(y.ndim)
+        )
 
-print("Shape:", grid.shape)
-print("dxs:", grid.dxs)
+        g = g.at[center].set((y.vals[right] - y.vals[left]) / (2 * dx))
 
-# Get coordinate arrays for plotting
-X, Y, Z = grid.coordinate_arrays  # Each is shape (nx, ny, nz)
-vals = grid.vals  # Shape (nx, ny, nz)
+        # forward difference at lower boundary
+        start = tuple(0 if ax == axis else slice(None) for ax in range(y.ndim))
+        g = g.at[start].set(
+            (
+                -3 * jnp.take(y.vals, 0, axis=axis)
+                + 4 * jnp.take(y.vals, 1, axis=axis)
+                - jnp.take(y.vals, 2, axis=axis)
+            )
+            / (2 * dx)
+        )
 
-# -------------------------------
-# 🔹 Option 1: Slice through the middle of Z axis
-# -------------------------------
-mid_z_idx = n_points[2] // 2
+        # backward difference at upper boundary
+        end = tuple(-1 if ax == axis else slice(None) for ax in range(y.ndim))
+        g = g.at[end].set(
+            (
+                3 * jnp.take(y.vals, -1, axis=axis)
+                - 4 * jnp.take(y.vals, -2, axis=axis)
+                + jnp.take(y.vals, -3, axis=axis)
+            )
+            / (2 * dx)
+        )
 
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(111, projection="3d")
+        grads.append(g)
 
-x_slice = X[:, :, mid_z_idx]
-y_slice = Y[:, :, mid_z_idx]
-val_slice = vals[:, :, mid_z_idx]
+    # Stack partial derivatives along a new axis -> (..., ndim)
+    grad_vals = jnp.stack(grads, axis=-1)
 
-surf = ax.plot_surface(x_slice, y_slice, val_slice, cmap="viridis")
-ax.set_title(f"Slice at z = {Z[0, 0, mid_z_idx]:.2f}")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("f(x,y,z)")
-fig.colorbar(surf, ax=ax, shrink=0.5)
-plt.show()
-
-# -------------------------------
-# 🔹 Option 2: 3D scatter plot of sampled points (sparser, slower)
-# -------------------------------
-# Optional: use only a few points to speed up scatter plot
-skip = 3
-Xs = X[::skip, ::skip, ::skip].flatten()
-Ys = Y[::skip, ::skip, ::skip].flatten()
-Zs = Z[::skip, ::skip, ::skip].flatten()
-Vs = vals[::skip, ::skip, ::skip].flatten()
-
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(111, projection="3d")
-p = ax.scatter(Xs, Ys, Zs, c=Vs, cmap="plasma", s=20)
-ax.set_title("3D Scatter of f(x,y,z)")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-fig.colorbar(p, ax=ax)
-plt.show()
+    return SpatialDiscretisationND(y.bounds, grad_vals)
