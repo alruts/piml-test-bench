@@ -1,10 +1,14 @@
+from typing import Callable
+
 import diffrax
 import jax
 import jax.numpy as jnp
 from diffrax import diffeqsolve, ODETerm, PIDController, SaveAt
+from jaxtyping import PyTree
 
 from test_bench.animate import animate_pressure_with_sensors
 from test_bench.discretize import SpatialDiscretisation
+from test_bench.geometry import Boundary, Vector
 
 
 jax.config.update("jax_enable_x64", True)
@@ -20,8 +24,8 @@ Zc = rho0 * c
 
 # Define zero-pole model for R(s) = k * (s + z) / (s + pole)
 k = 0.8
-z = 1.0
-pole = 8000.0
+z = 100.0
+pole = 9000.0
 A = -pole
 B = 1.0
 C = k * (z - pole)
@@ -36,25 +40,7 @@ v0 = SpatialDiscretisation.discretise_fn(x0, L, n_points, v0_fn)
 init_state = p0, v0, (0.0, 0.0)
 
 
-def central_diff(f, dx):
-    """
-    Computes central difference with second-order Neumann boundaries.
-
-    Args:
-        f: Array to differentiate
-        dx: Grid spacing
-
-    Returns:
-        df/dx array of same shape as f
-    """
-    df = jnp.zeros_like(f)
-    df = df.at[1:-1].set((f[2:] - f[:-2]) / (2 * dx))  # Interior: O(dx²)
-    df = df.at[0].set((-3 * f[0] + 4 * f[1] - f[2]) / (2 * dx))  # Left: O(dx²)
-    df = df.at[-1].set((3 * f[-1] - 4 * f[-2] + f[-3]) / (2 * dx))  # Right: O(dx²)
-    return df
-
-
-def apply_bc_at(state, args, idx, normal):
+def apply_bc_at(state: PyTree, args: PyTree, idx: int, normal: Vector):
     p, v, dpdx, dvdx, dpdt, dvdt, filter_val = state
     A, B, C, D, Zc = args
 
@@ -82,6 +68,24 @@ def apply_bc_at(state, args, idx, normal):
     new_dvdt = SpatialDiscretisation(dvdt.x0, dvdt.x_final, new_dvdt_vals)
 
     return new_dpdt, new_dvdt, dxdt
+
+
+def central_diff(f, dx):
+    """
+    Computes central difference with second-order Neumann boundaries.
+
+    Args:
+        f: Array to differentiate
+        dx: Grid spacing
+
+    Returns:
+        df/dx array of same shape as f
+    """
+    df = jnp.zeros_like(f)
+    df = df.at[1:-1].set((f[2:] - f[:-2]) / (2 * dx))  # Interior: O(dx²)
+    df = df.at[0].set((-3 * f[0] + 4 * f[1] - f[2]) / (2 * dx))  # Left: O(dx²)
+    df = df.at[-1].set((3 * f[-1] - 4 * f[-2] + f[-3]) / (2 * dx))  # Right: O(dx²)
+    return df
 
 
 def gradient(y: SpatialDiscretisation) -> SpatialDiscretisation:
@@ -146,4 +150,5 @@ sol = diffeqsolve(
 
 assert sol.ys is not None, "Solution not obtained"
 
+# Create animations
 animate_pressure_with_sensors(sol.ys, p0.xs, ts)
