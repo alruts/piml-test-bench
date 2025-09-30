@@ -100,17 +100,3 @@ to be decided later.
 3. Neural differential equation methods
     - Idea to model the known dynamics via PDE, with unknown source term as network.
     - Idea to incorporate stochastic PDE for non-deterministic sources (tire-road).
-
-## Meeting notes
-
-### 16/09/2025
-- Andreas could not join due to dentist appointment.
-- Sturla settling in at DTU, computer set up.
-- Leaning towards simulations in the frequency domain.
-    - Saves computational load.
-    - This is what we are interested in the end.
-- Discussed neural PDE approach, want to research this direction.
-    - Pushing the state-of-the-art if it works.
-- PINN requires a lot of guidance via custom loss/architectures.
-- Next time there will be some slides.
-
